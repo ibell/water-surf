@@ -1,0 +1,75 @@
+
+<!DOCTYPE html>
+    <head>
+      <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+      <script src="coolprop.js"></script>
+    </head>
+    
+    <body>
+    
+    <!-- Plotly chart will be drawn inside this div -->
+    <div id="plotly-div" style="width: 800px; height: 800px;"></div>
+
+    <script>
+      function linspace(minval, maxval, N) {
+        var increment = (maxval - minval) / (N - 1);
+        var y = [];
+        for (var i = 0; i < N; i++) {
+          y.push(minval + increment * i);
+        }
+        return y;
+      }
+      
+      // CoolProp is async loaded, do the plot after it is ready
+      Module['onRuntimeInitialized'] = function() { 
+
+        var T = linspace(280, 800, 200);
+        var logp = linspace(Math.log(600), Math.log(40e7), 200);
+
+        var TT = [], PP = [], ZZ = [];
+        var AS = Module.factory('HEOS','WATER');
+        var PT = Module.input_pairs.PT_INPUTS
+
+        for (var i = 0; i < T.length; i++)
+        {
+          var prow = [], Trow = [], zrow = [];
+          for (var j = 0; j < logp.length; j++){
+            Trow.push(T[i]);
+            prow.push(Math.exp(logp[j]))
+            AS.update(PT, prow[j], T[i]);
+            zrow.push(AS.viscosity()*1e6);
+          }
+          TT.push(Trow);
+          PP.push(prow);
+          ZZ.push(zrow);
+        }
+        // console.log(TT);
+        // console.log(PP);
+        // console.log(ZZ);
+
+        var trace1 = {
+            x: TT, y: PP, z: ZZ, type: "surface"
+        }
+
+        var data = [trace1];
+        var layout = {
+          scene: {
+            xaxis:{title: 'Temperature (K)',
+                   type:'linear'},
+            yaxis:{title: 'Pressure (Pa)',
+                   type:'log'},
+            zaxis: {title: 'Viscosity (uPa-s)',
+                   type:'log'},
+          }
+        };
+        Plotly.newPlot('plotly-div', {
+          data: data,
+          layout: layout
+        });
+      };
+      
+     </script>
+   </body>
+ </html>
+
+
